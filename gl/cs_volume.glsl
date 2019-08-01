@@ -29,9 +29,9 @@ void main()
     uvec3 xyz = gl_LocalInvocationID.xyz + gl_WorkGroupID.xyz * gl_WorkGroupSize.xyz;
     uint i = xyz_to_i(xyz);
 
-    vec3 uvw = vec3(xyz) / u_volume_size;
+    vec3 uvw = vec3(xyz) / vec3(u_volume_size);
     // uvw.x = abs(0.5 - uvw.x);
-    uvw.x = 1.0;
+    uvw.x = 0.2;
 
     buf0_col[i] = vec4(uvw, 1.0);
 }

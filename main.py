@@ -2,13 +2,13 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 import glfw
+import glm
 import numpy as np
 import moderngl as mg
-import glm
 
 
 class GLState(object):
-    movement = glm.vec2(0.0, 0.0)
+    movement = glm.vec3(0.0, 0.0, 0.0)
 
     def __init__(self):
         super(GLState, self).__init__()
@@ -44,33 +44,35 @@ class GLState(object):
 
     def on_resize_fb(self, window, w, h):
         self.gl.viewport = (0, 0, w, h)
-        self.update_uniforms(
-                {
-                    "u_width": w,
-                    "u_height": h,
-                }
-            )
+        self.rebuild_vao()
+        self.update_uniforms({"u_width": w, "u_height": h})
 
     def on_key(self, window, key, scancode, action, mods):
         if key == glfw.KEY_SPACE and action == glfw.PRESS:
-            print(scancode)
+            print(self.program["u_volume_size"].value)
 
     def update(self):
-        a = glfw.get_key(self.window, glfw.KEY_A)
-        w = glfw.get_key(self.window, glfw.KEY_W)
-        d = glfw.get_key(self.window, glfw.KEY_D)
-        s = glfw.get_key(self.window, glfw.KEY_S)
+        w = self.window
+        LEFT = glfw.get_key(w, glfw.KEY_A) or glfw.get_key(w, glfw.KEY_LEFT)
+        FORWARD = glfw.get_key(w, glfw.KEY_W) or glfw.get_key(w, glfw.KEY_UP)
+        RIGHT = glfw.get_key(w, glfw.KEY_D) or glfw.get_key(w, glfw.KEY_RIGHT)
+        BACK = glfw.get_key(w, glfw.KEY_S) or glfw.get_key(w, glfw.KEY_DOWN)
+        UP = glfw.get_key(w, glfw.KEY_E) or glfw.get_key(w, glfw.KEY_PAGE_UP)
+        DOWN = glfw.get_key(w, glfw.KEY_Q) or glfw.get_key(w, glfw.KEY_PAGE_DOWN)
 
-        a *= glm.vec2(-1.0, +0.0)
-        w *= glm.vec2(+0.0, -1.0)
-        d *= glm.vec2(+1.0, +0.0)
-        s *= glm.vec2(+0.0, +1.0)
+        LEFT *= glm.vec3(-1.0, +0.0, +0.0)
+        FORWARD *= glm.vec3(+0.0, -1.0, +0.0)
+        RIGHT *= glm.vec3(+1.0, +0.0, +0.0)
+        BACK *= glm.vec3(+0.0, +1.0, +0.0)
+        UP *= glm.vec3(+0.0, +0.0, +1.0)
+        DOWN *= glm.vec3(+0.0, +0.0, -1.0)
 
-        self.movement += a + w + d + s
-        self.movement.y = glm.max(glm.min(self.movement.y, 20.0), -3.0)
-        self.update_uniforms({
-            "u_movement": (self.movement.x, self.movement.y)
-        })
+        self.movement += LEFT + FORWARD + RIGHT + BACK + UP + DOWN
+        self.movement.y = glm.max(glm.min(self.movement.y, 50.0), -8.0)
+        self.movement.z = glm.max(glm.min(self.movement.z, 30.0), -300.0)
+        self.update_uniforms(
+            {"u_movement": (self.movement.x, self.movement.y, self.movement.z)}
+        )
 
     def mainloop(self):
         while not glfw.window_should_close(self.window):
@@ -107,7 +109,7 @@ class GLState(object):
                 {
                     "u_width": self.u_width,
                     "u_height": self.u_height,
-                    "u_volume_size": (self.u_volume_size),
+                    "u_volume_size": self.u_volume_size,
                 }
             )
             print("compiled program")
