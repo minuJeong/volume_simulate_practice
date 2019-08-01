@@ -30,6 +30,7 @@ void main()
     uint i = xyz_to_i(xyz);
 
     vec3 uvw = vec3(xyz) / u_volume_size;
+    // uvw.x = abs(0.5 - uvw.x);
     uvw.x = 1.0;
 
     buf0_col[i] = vec4(uvw, 1.0);

@@ -4,9 +4,12 @@ from watchdog.events import FileSystemEventHandler
 import glfw
 import numpy as np
 import moderngl as mg
+import glm
 
 
 class GLState(object):
+    movement = glm.vec2(0.0, 0.0)
+
     def __init__(self):
         super(GLState, self).__init__()
 
@@ -14,8 +17,10 @@ class GLState(object):
         if not glfw.init():
             return
 
-        glfw.window_hint(glfw.FLOATING, True)
-        self.u_width, self.u_height = 512, 512
+        glfw.window_hint(glfw.FLOATING, glfw.TRUE)
+        glfw.window_hint(glfw.RESIZABLE, glfw.TRUE)
+
+        self.u_width, self.u_height = 400, 400
         self.window = glfw.create_window(
             self.u_width, self.u_height, "pyGLFW window", None, None
         )
@@ -28,11 +33,44 @@ class GLState(object):
         self.init()
         self.should_rebuild = False
 
+        glfw.set_framebuffer_size_callback(self.window, self.on_resize_fb)
+        glfw.set_key_callback(self.window, self.on_key)
+
         handler = FileSystemEventHandler()
         handler.on_modified = lambda e: self.set_rebuild(True)
         observer = Observer()
         observer.schedule(handler, "./gl")
         observer.start()
+
+    def on_resize_fb(self, window, w, h):
+        self.gl.viewport = (0, 0, w, h)
+        self.update_uniforms(
+                {
+                    "u_width": w,
+                    "u_height": h,
+                }
+            )
+
+    def on_key(self, window, key, scancode, action, mods):
+        if key == glfw.KEY_SPACE and action == glfw.PRESS:
+            print(scancode)
+
+    def update(self):
+        a = glfw.get_key(self.window, glfw.KEY_A)
+        w = glfw.get_key(self.window, glfw.KEY_W)
+        d = glfw.get_key(self.window, glfw.KEY_D)
+        s = glfw.get_key(self.window, glfw.KEY_S)
+
+        a *= glm.vec2(-1.0, +0.0)
+        w *= glm.vec2(+0.0, -1.0)
+        d *= glm.vec2(+1.0, +0.0)
+        s *= glm.vec2(+0.0, +1.0)
+
+        self.movement += a + w + d + s
+        self.movement.y = glm.max(glm.min(self.movement.y, 20.0), -3.0)
+        self.update_uniforms({
+            "u_movement": (self.movement.x, self.movement.y)
+        })
 
     def mainloop(self):
         while not glfw.window_should_close(self.window):
@@ -41,8 +79,8 @@ class GLState(object):
                 self.should_rebuild = False
 
             self.update_uniforms({"u_time": glfw.get_time()})
-            # self.update_uniforms({"u_time": time.time() % 1000.0})
             self.render()
+            self.update()
 
             glfw.swap_buffers(self.window)
             glfw.poll_events()
@@ -113,11 +151,6 @@ class GLState(object):
 
     def render(self):
         self.cs_volume.run(self.gx, self.gy, self.gz)
-
-        # with self.scope:
-        #     self.vao.render()
-
-        # self.tex0.use(0)
         self.vao.render()
 
 
