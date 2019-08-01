@@ -1,4 +1,4 @@
 
 **Preview**
 
-![Preview](https://i.imgur.com/1o0iY4j.png)
+![Preview](https://i.imgur.com/bQNp4nn.gifv)
