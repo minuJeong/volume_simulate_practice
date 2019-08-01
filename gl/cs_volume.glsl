@@ -9,14 +9,28 @@ layout(binding=1) buffer in_0
 
 uniform uvec3 u_volume_size;
 
+uint VW = u_volume_size.x;
+uint VWH = u_volume_size.x * u_volume_size.y;
+
+uint xyz_to_i(uvec3 xyz)
+{
+    return xyz.x + xyz.y * VW + xyz.z * VWH;
+}
+
+uint uvw_to_i(vec3 uvw)
+{
+    uvw = clamp(uvw, 0.0, 1.0);
+    uvec3 xyz = uvec3(uvw * u_volume_size);
+    return xyz_to_i(xyz);
+}
+
 void main()
 {
     uvec3 xyz = gl_LocalInvocationID.xyz + gl_WorkGroupID.xyz * gl_WorkGroupSize.xyz;
-    uint i = xyz.x;
+    uint i = xyz_to_i(xyz);
 
-    vec3 uvw = xyz / u_volume_size;
-
-    uvw.x = 0.4;
+    vec3 uvw = vec3(xyz) / u_volume_size;
+    uvw.x = 1.0;
 
     buf0_col[i] = vec4(uvw, 1.0);
 }
