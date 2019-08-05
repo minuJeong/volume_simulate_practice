@@ -2,9 +2,14 @@
 
 layout(local_size_x=4, local_size_y=4, local_size_z=4) in;
 
+layout(binding=0) buffer bind_1
+{
+    float volume_noise[];
+};
+
 layout(binding=1) buffer in_0
 {
-    vec4 buf0_col[];
+    vec4 volume_data[];
 };
 
 uniform uvec3 u_volume_size;
@@ -30,8 +35,8 @@ void main()
     uint i = xyz_to_i(xyz);
 
     vec3 uvw = vec3(xyz) / vec3(u_volume_size);
-    // uvw.x = abs(0.5 - uvw.x);
-    uvw.x = 0.2;
+    // uvw.x = volume_noise[i].x;
 
-    buf0_col[i] = vec4(uvw, 1.0);
+    float alpha = volume_noise[i].x + 0.4;
+    volume_data[i] = vec4(uvw, alpha);
 }

@@ -1,3 +1,5 @@
+import os
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -5,6 +7,7 @@ import glfw
 import glm
 import numpy as np
 import moderngl as mg
+import imageio as ii
 
 
 class GLState(object):
@@ -48,8 +51,22 @@ class GLState(object):
         self.update_uniforms({"u_width": w, "u_height": h})
 
     def on_key(self, window, key, scancode, action, mods):
-        if key == glfw.KEY_SPACE and action == glfw.PRESS:
-            print(self.program["u_volume_size"].value)
+        if key == glfw.KEY_SPACE and action == glfw.RELEASE:
+            self.serialize_volume("./volume_noise", self.volume_noise_buffer, 1)
+            self.serialize_volume("./volume", self.volume_buffer, 4)
+            print("Save done!")
+
+    def serialize_volume(self, path, data, color_channels):
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        whd = self.u_volume_size
+        data = np.frombuffer(data.read(), dtype=np.float32)
+        data = np.multiply(data, 255.0)
+        data = data.reshape((whd[2], whd[1], whd[0], color_channels)).astype(np.uint8)
+        for i, layer in enumerate(data):
+            dst = f"{path}/{i}.jpg"
+            ii.imwrite(dst, layer[:, :, :3])
 
     def update(self):
         w = self.window
@@ -98,12 +115,15 @@ class GLState(object):
 
     def rebuild_vao(self):
         try:
+            self.cs_volume_noise = self.gl.compute_shader(self.read("./gl/cs_volume_noise.glsl"))
             self.cs_volume = self.gl.compute_shader(self.read("./gl/cs_volume.glsl"))
             self.program = self.gl.program(
                 vertex_shader=self.read("./gl/vs.glsl"),
                 fragment_shader=self.read("./gl/fs.glsl"),
             )
             self.vao = self.gl.vertex_array(self.program, self.vbo, self.ibo)
+
+            self.volume_noise_buffer.bind_to_storage_buffer(0)
             self.volume_buffer.bind_to_storage_buffer(1)
             self.update_uniforms(
                 {
@@ -112,7 +132,11 @@ class GLState(object):
                     "u_volume_size": self.u_volume_size,
                 }
             )
-            print("compiled program")
+
+            print("compiled program.. refreshing volume noise..")
+
+            self.cs_volume_noise.run(self.gx, self.gy, self.gz)
+            print("volume noise refreshed")
 
         except Exception as e:
             print(e)
@@ -138,15 +162,17 @@ class GLState(object):
         self.fbo = self.gl.framebuffer([self.tex0])
         self.scope = self.gl.scope(self.fbo)
 
-        self.u_volume_size = (32, 32, 32)
+        self.u_volume_size = (256, 256, 256)
         w, h, d = self.u_volume_size[0], self.u_volume_size[1], self.u_volume_size[2]
         self.gx, self.gy, self.gz = (int(w / 4), int(h / 4), int(d / 4))
-        self.volume_buffer = self.gl.buffer(reserve=w * h * d * 4)
+
+        self.volume_noise_buffer = self.gl.buffer(reserve=w * h * d * 1 * 4)
+        self.volume_buffer = self.gl.buffer(reserve=w * h * d * 4 * 4)
 
         self.rebuild_vao()
 
     def update_uniforms(self, uniforms):
-        for p in [self.program, self.cs_volume]:
+        for p in [self.cs_volume_noise, self.cs_volume, self.program]:
             for n, v in uniforms.items():
                 if n in p:
                     p[n].value = v

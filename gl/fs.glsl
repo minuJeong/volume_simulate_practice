@@ -7,11 +7,9 @@
 in vec2 vs_uv;
 out vec4 fs_color;
 
-layout(binding=0) uniform sampler2D tex;
-
 layout(binding=1) buffer in_0
 {
-    vec4 buf0_col[];
+    vec4 volume_data[];
 };
 
 uniform float u_time;
@@ -26,6 +24,7 @@ struct VolumeSample
     float distance;
     vec3 position;
     vec3 local_position;
+    vec3 color;
 };
 
 const uint VW = u_volume_size.x;
@@ -73,18 +72,22 @@ VolumeSample sample_volume(vec3 o, vec3 r)
 
     vec3 inner_position;
     vec3 uvw;
+    vec3 color;
     float density = 0.0;
     uint volume_data_i;
-    const float VOLUME_STEP = 0.2;
+    const float VOLUME_STEP = 0.4;
 
     if (distance < FAR) for (int i = 0; i < 128; i++)
     {
         inner_position = o + r * distance;
         if (vmax(abs(inner_position)) > VOLUME_SCALE * 2.0) { continue; }
 
-        uvw = (inner_position.xyz + HALF_VOLUME_SCALE) / VOLUME_SCALE;
+        uvw = (inner_position.xyz - HALF_VOLUME_SCALE) / VOLUME_SCALE;
         volume_data_i = uvw_to_i(uvw);
-        density += buf0_col[volume_data_i].x * 0.036;
+
+        vec4 data_at = volume_data[volume_data_i];
+        density += data_at.w * 0.0006;
+        color += data_at.xyz * data_at.w;
 
         if (density >= 1.0) { density = 1.0; break; }
         else { distance += VOLUME_STEP; }
@@ -96,7 +99,8 @@ VolumeSample sample_volume(vec3 o, vec3 r)
         density,
         distance,
         position,
-        uvw
+        uvw,
+        color
     );
     return vs;
 }
@@ -144,14 +148,8 @@ void main()
 
     vec3 N = normal_at(result.position);
 
-    vec3 RGB = result.density * vec3(1.0);
+    vec3 RGB = result.density * result.color;
     RGB = saturate(RGB);
-    if (result.distance < FAR)
-    {
-        vec3 L = vec3(-5.0, 5.0, 5.0);
-        L = normalize(L - result.position);
-        RGB += vec3(clamp(dot(N, L), 0.0, 1.0));
-    }
 
     fs_color = vec4(RGB, 1.0);
 }
