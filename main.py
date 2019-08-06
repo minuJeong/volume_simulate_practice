@@ -115,7 +115,9 @@ class GLState(object):
 
     def rebuild_vao(self):
         try:
-            self.cs_volume_noise = self.gl.compute_shader(self.read("./gl/cs_volume_noise.glsl"))
+            self.cs_volume_noise = self.gl.compute_shader(
+                self.read("./gl/cs_volume_noise.glsl")
+            )
             self.cs_volume = self.gl.compute_shader(self.read("./gl/cs_volume.glsl"))
             self.program = self.gl.program(
                 vertex_shader=self.read("./gl/vs.glsl"),
