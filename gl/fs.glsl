@@ -1,6 +1,6 @@
 #version 460
 
-#define FAR 50.0
+#define FAR 100.0
 
 #define saturate(x) min(max(x, 0.0), 1.0)
 
@@ -61,7 +61,7 @@ VolumeSample sample_volume(vec3 o, vec3 r)
     vec3 position;
     float distance = 2.0;
     float d;
-    
+
     for (int i = 0; i < 32; i++)
     {
         position = o + r * distance;
@@ -75,7 +75,7 @@ VolumeSample sample_volume(vec3 o, vec3 r)
     vec3 color;
     float density = 0.0;
     uint volume_data_i;
-    const float VOLUME_STEP = 0.4;
+    const float VOLUME_STEP = 0.3;
 
     if (distance < FAR) for (int i = 0; i < 128; i++)
     {
@@ -86,14 +86,14 @@ VolumeSample sample_volume(vec3 o, vec3 r)
         volume_data_i = uvw_to_i(uvw);
 
         vec4 data_at = volume_data[volume_data_i];
-        density += data_at.w * 0.0006;
+        density += data_at.w * 0.002;
         color += data_at.xyz * data_at.w;
 
-        if (density >= 1.0) { density = 1.0; break; }
+        if (density >= 1.0) { break; }
         else { distance += VOLUME_STEP; }
     }
+    density = min(density, 1.0);
 
-    uvw.z = 0.5;
     VolumeSample vs = VolumeSample
     (
         density,

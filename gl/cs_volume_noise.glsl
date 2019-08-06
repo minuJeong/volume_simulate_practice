@@ -130,9 +130,7 @@ void main()
     vec3 uvw = vxyz / u_volume_size;
 
     float value = fbm(uvw);
-    value = value * 0.5 + 0.5;
     value = clamp(value, 0.0, 1.0);
 
     volume_noise[xy_to_i(xyz)] = value;
-    volume_noise[xy_to_i(xyz)] = length(uvw);
 }

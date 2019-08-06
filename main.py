@@ -47,7 +47,7 @@ class GLState(object):
 
     def on_resize_fb(self, window, w, h):
         self.gl.viewport = (0, 0, w, h)
-        self.rebuild_vao()
+        self.recompile()
         self.update_uniforms({"u_width": w, "u_height": h})
 
     def on_key(self, window, key, scancode, action, mods):
@@ -57,6 +57,8 @@ class GLState(object):
             print("Save done!")
 
     def serialize_volume(self, path, data, color_channels):
+        print(f"serializing: {path}..")
+
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -94,7 +96,7 @@ class GLState(object):
     def mainloop(self):
         while not glfw.window_should_close(self.window):
             if self.should_rebuild:
-                self.rebuild_vao()
+                self.recompile()
                 self.should_rebuild = False
 
             self.update_uniforms({"u_time": glfw.get_time()})
@@ -113,7 +115,7 @@ class GLState(object):
     def set_rebuild(self, should_rebuild):
         self.should_rebuild = should_rebuild
 
-    def rebuild_vao(self):
+    def recompile(self):
         try:
             self.cs_volume_noise = self.gl.compute_shader(
                 self.read("./gl/cs_volume_noise.glsl")
@@ -171,7 +173,7 @@ class GLState(object):
         self.volume_noise_buffer = self.gl.buffer(reserve=w * h * d * 1 * 4)
         self.volume_buffer = self.gl.buffer(reserve=w * h * d * 4 * 4)
 
-        self.rebuild_vao()
+        self.recompile()
 
     def update_uniforms(self, uniforms):
         for p in [self.cs_volume_noise, self.cs_volume, self.program]:
