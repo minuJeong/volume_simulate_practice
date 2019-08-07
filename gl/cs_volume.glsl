@@ -39,7 +39,6 @@ void main()
     float alpha = volume_noise[i].x + 0.4;
 
     vec3 RGB = uvw;
-    RGB = RGB;
 
     RGB = clamp(RGB, 0.0, 1.0);
     volume_data[i] = vec4(RGB, alpha);
