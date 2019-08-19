@@ -89,7 +89,7 @@ class GLState(object):
         DOWN *= glm.vec3(+0.0, +0.0, -1.0) * SPEED
 
         self.movement += LEFT + FORWARD + RIGHT + BACK + UP + DOWN
-        self.movement.y = glm.max(glm.min(self.movement.y, 50.0), -8.0)
+        self.movement.y = glm.max(glm.min(self.movement.y, 100.0), -100.0)
         self.movement.z = glm.max(glm.min(self.movement.z, 30.0), -300.0)
         self.update_uniforms(
             {"u_movement": (self.movement.x, self.movement.y, self.movement.z)}
