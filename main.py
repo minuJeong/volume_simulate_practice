@@ -24,6 +24,7 @@ class GLState(object):
         glfw.window_hint(glfw.RESIZABLE, glfw.TRUE)
 
         self.u_width, self.u_height = 400, 400
+        self.u_volume_size = (64, 64, 64)
         self.window = glfw.create_window(
             self.u_width, self.u_height, "pyGLFW window", None, None
         )
@@ -79,12 +80,13 @@ class GLState(object):
         UP = glfw.get_key(w, glfw.KEY_E) or glfw.get_key(w, glfw.KEY_PAGE_UP)
         DOWN = glfw.get_key(w, glfw.KEY_Q) or glfw.get_key(w, glfw.KEY_PAGE_DOWN)
 
-        LEFT *= glm.vec3(-1.0, +0.0, +0.0)
-        FORWARD *= glm.vec3(+0.0, -1.0, +0.0)
-        RIGHT *= glm.vec3(+1.0, +0.0, +0.0)
-        BACK *= glm.vec3(+0.0, +1.0, +0.0)
-        UP *= glm.vec3(+0.0, +0.0, +1.0)
-        DOWN *= glm.vec3(+0.0, +0.0, -1.0)
+        SPEED = 0.1;
+        LEFT *= glm.vec3(-1.0, +0.0, +0.0) * SPEED
+        FORWARD *= glm.vec3(+0.0, -1.0, +0.0) * SPEED
+        RIGHT *= glm.vec3(+1.0, +0.0, +0.0) * SPEED
+        BACK *= glm.vec3(+0.0, +1.0, +0.0) * SPEED
+        UP *= glm.vec3(+0.0, +0.0, +1.0) * SPEED
+        DOWN *= glm.vec3(+0.0, +0.0, -1.0) * SPEED
 
         self.movement += LEFT + FORWARD + RIGHT + BACK + UP + DOWN
         self.movement.y = glm.max(glm.min(self.movement.y, 50.0), -8.0)
@@ -166,7 +168,6 @@ class GLState(object):
         self.fbo = self.gl.framebuffer([self.tex0])
         self.scope = self.gl.scope(self.fbo)
 
-        self.u_volume_size = (256, 256, 256)
         w, h, d = self.u_volume_size[0], self.u_volume_size[1], self.u_volume_size[2]
         self.gx, self.gy, self.gz = (int(w / 4), int(h / 4), int(d / 4))
 
